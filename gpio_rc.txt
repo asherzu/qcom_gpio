@@ -1,0 +1,12 @@
+columns=10
+separate=|
+#type|value|name|
+
+_L|GPIO Read/Write||
+_L|GPIO Number:|| _E|0|gpioNum|
+_L|Base Address:|| _E|0x01000000|baseAddr|		_L|Offset:||	_E|0x1000|offset|
+_L|Function|| _E|0|fun| _L|Pull|| _E|NO_PULL|pull|	
+_L|Drive|| _E|2ma|drv|   _L|Dir|| _E|in|dir|  
+_L|value out|| _E|0|GPIO_OUT|   _L|value in|| _E|0|GPIO_IN|
+_B|Read|read| _B|Write|write|   _B|Help|help|
+
