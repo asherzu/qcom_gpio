@@ -54,7 +54,7 @@ class AssaistantApp(tk.Tk):
         fileMenu = tk.Menu(menubar,tearoff=0)
         for F in self.frames:
             name = self.frames[F].get_name()
-            fileMenu.add_command(label=name,command=lambda: self.show_frame(F))
+            fileMenu.add_command(label=name,command=lambda F= F: self.show_frame(F))
         # fileMenu.add_command(label="Save picture",command=lambda:self.save_picture())
         menubar.add_cascade(label= "Utils",menu=fileMenu)
         
