@@ -2,7 +2,7 @@ columns=10
 separate=|
 #type|value|name|
 
-_L|GPIO Read/Write||
+_L|GPIO Read/Write with||  _E|/system/bin/r|program|
 _L|GPIO Number:|| _E|0|gpioNum|
 _L|Base Address:|| _E|0x01000000|baseAddr|		_L|Offset:||	_E|0x1000|offset|
 _L|Function|| _E|0|fun| _L|Pull|| _E|NO_PULL|pull|	

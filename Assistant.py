@@ -63,7 +63,7 @@ class AssaistantApp(tk.Tk):
     def show_frame(self,frame):
         if frame in self.frames:
             self.frames[frame].tkraise()
-            print("tkraise");
+            print("tkraise {}".format(self.frames[frame].get_name()))
         else:
             print("Error in show_frame");
 class HomeFrame(tk.Frame):
@@ -77,7 +77,7 @@ class HomeFrame(tk.Frame):
     def append_buttons(self,frames,controller):
         for F in frames:
             name = frames[F].get_name()
-            button = ttk.Button(self, text=name,command=lambda: controller.show_frame(F))
+            button = ttk.Button(self, text=name,command=lambda F=F: controller.show_frame(F))
             button.pack()
 def shell(cmd):
     process = subprocess.run(cmd,stdout=subprocess.PIPE)
@@ -181,7 +181,23 @@ class GPIOFrame(SimpleRc):
 
 
 """)
+    def read_register(self,serials,program,addr):
+        result=adb_shell(serials[0],"{} 0x{:x}".format(program,addr))
+        print(result)
+        patern = re.compile("(\w+):\s+(\w+)")
+        map=patern.findall(result)
+        print(map)
+        if map == []:
+            alert("Decode error")
+            return
+        value= int(map[0][1],16)
+        print("0x{:x}: 0x{:x}".format(addr,value))
+        return value
+    def write_register(self,serials,program,addr,value):
+        return adb_shell(serials[0],"{} 0x{:x} 0x{:x}".format(program,addr,value))
     def read(self):
+        prog = self._widgets['program'].get()
+        
         base = int(self._widgets['baseAddr'].get(),16)
         offset=int(self._widgets['offset'].get(),16)
         num =  int(self._widgets['gpioNum'].get(),10)
@@ -192,16 +208,7 @@ class GPIOFrame(SimpleRc):
         if serials == []:
             alert("Not device")
             return
-        result=adb_shell(serials[0],"/system/bin/r 0x{:x}".format(addr))
-        print(result)
-        patern = re.compile("(\w+):\s+(\w+)")
-        map=patern.findall(result)
-        print(map)
-        if map == []:
-            alert("Decode error")
-            return
-        value= int(map[0][1],16)
-        print("0x{:x}: 0x{:x}".format(addr,value))
+        value = self.read_register(serials,prog,addr)
         FUNC_SEL=0xF & (value >> 2)#5:2
         self._widgets['fun'].delete(0, tk.END)
         self._widgets['fun'].insert(tk.END, str(FUNC_SEL))
@@ -226,14 +233,8 @@ class GPIOFrame(SimpleRc):
         else:
             self._widgets['dir'].insert(tk.END,"in")
         
-        result=adb_shell(serials[0],"/system/bin/r 0x{:x}".format(addr+4))
-        map=patern.findall(result)
+        value = self.read_register(serials,prog,addr+4)
         
-        print(map)
-        if map == []:
-            alert("Decode error")
-            return
-        value= int(map[0][1],16)
         self._widgets['GPIO_OUT'].delete(0,tk.END)
         self._widgets['GPIO_IN'].delete(0,tk.END)
         self._widgets['GPIO_OUT'].insert(tk.END,str(value>>1 & 1))
@@ -243,6 +244,8 @@ class GPIOFrame(SimpleRc):
         for w in self._widgets.values():
             w.update_idletasks()
     def write(self):
+        prog = self._widgets['program'].get()
+        
         base = int(self._widgets['baseAddr'].get(),16)
         offset=int(self._widgets['offset'].get(),16)
         num =  int(self._widgets['gpioNum'].get(),10)
@@ -253,25 +256,11 @@ class GPIOFrame(SimpleRc):
         if serials == []:
             alert("Not device")
             return
-        result=adb_shell(serials[0],"/system/bin/r 0x{:x}".format(addr))
-        print(result)
-        patern = re.compile("(\w+):\s+(\w+)")
-        map=patern.findall(result)
-        print(map)
-        if map == []:
-            alert("Decode error")
-            return
-        TLMM_GPIO_CFGn= int(map[0][1],16)
+        
+        TLMM_GPIO_CFGn= self.read_register(serials,prog,addr)
         print("0x{:x}: 0x{:x}".format(addr,TLMM_GPIO_CFGn))
         
-        result=adb_shell(serials[0],"/system/bin/r 0x{:x}".format(addr+4))
-        map=patern.findall(result)
-        
-        print(map)
-        if map == []:
-            alert("Decode error")
-            return
-        TLMM_GPIO_IN_OUT= int(map[0][1],16)
+        TLMM_GPIO_IN_OUT= self.read_register(serials,prog,addr+4)
         print("before TLMM_GPIO_CFGn {:x} {:x}".format(TLMM_GPIO_CFGn,TLMM_GPIO_IN_OUT))
         GPIO_OUT = int(self._widgets['GPIO_OUT'].get())
         
@@ -308,9 +297,9 @@ class GPIOFrame(SimpleRc):
             alert("Wrong input pull")
             return
         print("after TLMM_GPIO_CFGn {:x} {:x}".format(TLMM_GPIO_CFGn,TLMM_GPIO_IN_OUT))
-        result=adb_shell(serials[0],"/system/bin/r 0x{:x} 0x{:x}".format(addr,TLMM_GPIO_CFGn))
+        result=self.write_register(serials,prog,addr,TLMM_GPIO_CFGn)
         print(result)
-        result=adb_shell(serials[0],"/system/bin/r 0x{:x} 0x{:x}".format(addr+4,TLMM_GPIO_IN_OUT))
+        result=self.write_register(serials,prog,addr+4,TLMM_GPIO_IN_OUT)
         print(result)
 app = AssaistantApp()
 app.geometry("1024x768")
